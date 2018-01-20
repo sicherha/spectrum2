@@ -2319,11 +2319,11 @@ int main(int argc, char **argv) {
 	config = SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<Config>(cfg);
 
 	Logging::initBackendLogging(config.get());
-	if (CONFIG_STRING(config, "service.protocol") == "prpl-hangouts") {
+	if (CONFIG_STRING(config, "service.protocol") == "prpl-hangouts" || CONFIG_STRING(config, "service.protocol") == "prpl-skypeweb") {
 		storagebackend = StorageBackend::createBackend(config.get(), error);
 		if (storagebackend == NULL) {
 			LOG4CXX_ERROR(logger, "Error creating StorageBackend! " << error);
-			LOG4CXX_ERROR(logger, "Hangouts backend needs storage backend configured to work! " << error);
+			LOG4CXX_ERROR(logger, "Hangouts and Skypeweb backends needs storage backend configured to work! " << error);
 			return NetworkPlugin::StorageBackendNeeded;
 		}
 		else if (!storagebackend->connect()) {
