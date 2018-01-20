@@ -185,6 +185,7 @@ static std::string getAlias(PurpleBuddy *m_buddy) {
 
 static boost::mutex dblock;
 static std::string OAUTH_TOKEN = "hangouts_oauth_token";
+static std::string LAST_MESSAGE_TIMESTAMP = "skypeweb_last_message_timestamp";
 
 static bool getUserOAuthToken(const std::string user, std::string &token)
 {
@@ -210,6 +211,31 @@ static bool storeUserOAuthToken(const std::string user, const std::string OAuthT
 	}
 	storagebackend->updateUserSetting((long)info.id, OAUTH_TOKEN, OAuthToken);
 	return true;
+}
+
+static bool getLastMessageTimestamp(const std::string user, int &ts) {
+    boost::mutex::scoped_lock lock(dblock);
+    UserInfo info;
+    if(storagebackend->getUser(user, info) == false) {
+        LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
+        return false;
+    }
+    int type = TYPE_INT;
+    std::string timestampString;
+    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
+    ts = boost::lexical_cast<int>(timestampString);
+    return true;
+}
+
+static bool storeLastMessageTimestamp(const std::string user, int ts) {
+    boost::mutex::scoped_lock lock(dblock);
+    UserInfo info;
+    if(storagebackend->getUser(user, info) == false) {
+        LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
+        return false;
+    }
+    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, boost::lexical_cast<std::string>(ts));
+    return true;
 }
 
 class SpectrumNetworkPlugin : public NetworkPlugin {
@@ -411,6 +437,12 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					purple_account_set_password_wrapped(account, token.c_str());
 				}
 			}
+            if (protocol == "prpl-skypeweb") {
+                int ts;
+                if (getLastMessageTimestamp(user, ts)) {
+                    purple_account_set_int_wrapped(account, "last_message_timestamp", ts);
+                }
+            }
 
 			setDefaultAccountOptions(account);
 
@@ -448,6 +480,9 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					std::string data = stringOf(purple_account_get_int_wrapped(account, "version", 0));
 					g_file_set_contents ("gfire.cfg", data.c_str(), data.size(), NULL);
 				}
+                if (int ts = purple_account_get_int_wrapped(account, "last_message_timestamp", 0) != 0) {
+                    storeLastMessageTimestamp(user, ts);
+                }
 // 				VALGRIND_DO_LEAK_CHECK;
 				m_sessions.erase(user);
 				purple_account_disconnect_wrapped(account);
