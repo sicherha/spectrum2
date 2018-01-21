@@ -223,8 +223,12 @@ static bool getLastMessageTimestamp(const std::string user, int &ts) {
     int type = TYPE_INT;
     std::string timestampString;
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
-    ts = boost::lexical_cast<int>(timestampString);
-    return true;
+    if (timestampString.length() > 0) {
+        ts = boost::lexical_cast<int>(timestampString);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 static bool storeLastMessageTimestamp(const std::string user, int ts) {
