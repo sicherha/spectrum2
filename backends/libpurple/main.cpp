@@ -209,7 +209,7 @@ static bool storeUserOAuthToken(const std::string user, const std::string OAuthT
 		LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
 		return false;
 	}
-    token = "";
+    std::string token = "";
     int type = TYPE_STRING;
     storagebackend->getUserSetting((long)info.id, OAUTH_TOKEN, type, token);
 	storagebackend->updateUserSetting((long)info.id, OAUTH_TOKEN, OAuthToken);
@@ -227,6 +227,7 @@ static bool getLastMessageTimestamp(const std::string user, int ts) {
     std::string timestampString = "0";
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
     ts = boost::lexical_cast<int>(timestampString);
+    return true;
 }
 
 static bool storeLastMessageTimestamp(const std::string user, const std::string &ts) {
@@ -238,8 +239,8 @@ static bool storeLastMessageTimestamp(const std::string user, const std::string 
     }
     int type = TYPE_INT;
     std::string defaultValue = "0";
-    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, defaultValue);
-    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, ts);
+    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, defaultValue);
+    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, ts);
     return true;
 }
 
