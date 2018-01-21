@@ -213,18 +213,18 @@ static bool storeUserOAuthToken(const std::string user, const std::string OAuthT
 	return true;
 }
 
-static bool getLastMessageTimestamp(const std::string user, int &ts) {
+static bool getLastMessageTimestamp(const std::string user, int ts) {
     boost::mutex::scoped_lock lock(dblock);
     UserInfo info;
     if(storagebackend->getUser(user, info) == false) {
         LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
         return false;
     }
-    int type = TYPE_INT;
+    int type = TYPE_STRING;
     std::string timestampString;
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
     if (timestampString.length() > 0) {
-        ts = boost::lexical_cast<int>(timestampString);
+        ts = boost::lexical_cast<int>(timestampString.c_str());
         return true;
     } else {
         return false;
@@ -442,7 +442,7 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 				}
 			}
             if (protocol == "prpl-skypeweb") {
-                int ts;
+                int ts = 0;
                 if (getLastMessageTimestamp(user, ts)) {
                     purple_account_set_int_wrapped(account, "last_message_timestamp", ts);
                 }
