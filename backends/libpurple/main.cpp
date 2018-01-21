@@ -226,7 +226,7 @@ static bool getLastMessageTimestamp(const std::string user, int ts) {
     int type = TYPE_INT;
     std::string timestampString = "0";
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
-    ts = boost::lexical_cast<int>(timestampString);
+    ts = fromString<int>(timestampString);
     return true;
 }
 
@@ -487,7 +487,7 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					g_file_set_contents ("gfire.cfg", data.c_str(), data.size(), NULL);
 				}
                 if (int ts = purple_account_get_int_wrapped(account, "last_message_timestamp", 0) > 0) {
-                    storeLastMessageTimestamp(user, boost::lexical_cast<std::string>(ts));
+                    storeLastMessageTimestamp(user, stringOf(ts));
                 }
 // 				VALGRIND_DO_LEAK_CHECK;
 				m_sessions.erase(user);
