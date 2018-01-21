@@ -237,6 +237,7 @@ static bool storeLastMessageTimestamp(const std::string user, const std::string 
         LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
         return false;
     }
+    LOGGER_INFO(logger, "timestamp is " << ts);
     int type = TYPE_INT;
     std::string defaultValue = "0";
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, defaultValue);
