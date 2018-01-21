@@ -209,6 +209,9 @@ static bool storeUserOAuthToken(const std::string user, const std::string OAuthT
 		LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
 		return false;
 	}
+    token = "";
+    int type = TYPE_STRING;
+    storagebackend->getUserSetting((long)info.id, OAUTH_TOKEN, type, token);
 	storagebackend->updateUserSetting((long)info.id, OAUTH_TOKEN, OAuthToken);
 	return true;
 }
@@ -220,25 +223,23 @@ static bool getLastMessageTimestamp(const std::string user, int ts) {
         LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
         return false;
     }
-    int type = TYPE_STRING;
-    std::string timestampString;
+    int type = TYPE_INT;
+    std::string timestampString = "0";
     storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
-    if (timestampString.length() > 0) {
-        ts = boost::lexical_cast<int>(timestampString.c_str());
-        return true;
-    } else {
-        return false;
-    }
+    ts = boost::lexical_cast<int>(timestampString);
 }
 
-static bool storeLastMessageTimestamp(const std::string user, int ts) {
+static bool storeLastMessageTimestamp(const std::string user, const std::string &ts) {
     boost::mutex::scoped_lock lock(dblock);
     UserInfo info;
     if(storagebackend->getUser(user, info) == false) {
         LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
         return false;
     }
-    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, boost::lexical_cast<std::string>(ts));
+    int type = TYPE_INT;
+    std::string defaultValue = "0";
+    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, defaultValue);
+    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, ts);
     return true;
 }
 
@@ -484,8 +485,8 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					std::string data = stringOf(purple_account_get_int_wrapped(account, "version", 0));
 					g_file_set_contents ("gfire.cfg", data.c_str(), data.size(), NULL);
 				}
-                if (int ts = purple_account_get_int_wrapped(account, "last_message_timestamp", 0) != 0) {
-                    storeLastMessageTimestamp(user, ts);
+                if (int ts = purple_account_get_int_wrapped(account, "last_message_timestamp", 0) > 0) {
+                    storeLastMessageTimestamp(user, boost::lexical_cast<std::string>(ts));
                 }
 // 				VALGRIND_DO_LEAK_CHECK;
 				m_sessions.erase(user);
