@@ -185,7 +185,6 @@ static std::string getAlias(PurpleBuddy *m_buddy) {
 
 static boost::mutex dblock;
 static std::string OAUTH_TOKEN = "hangouts_oauth_token";
-static std::string LAST_MESSAGE_TIMESTAMP = "skypeweb_last_message_timestamp";
 
 static bool getUserOAuthToken(const std::string user, std::string &token)
 {
@@ -214,35 +213,6 @@ static bool storeUserOAuthToken(const std::string user, const std::string OAuthT
     storagebackend->getUserSetting((long)info.id, OAUTH_TOKEN, type, token);
 	storagebackend->updateUserSetting((long)info.id, OAUTH_TOKEN, OAuthToken);
 	return true;
-}
-
-static bool getLastMessageTimestamp(const std::string user, int ts) {
-    boost::mutex::scoped_lock lock(dblock);
-    UserInfo info;
-    if(storagebackend->getUser(user, info) == false) {
-        LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
-        return false;
-    }
-    int type = TYPE_INT;
-    std::string timestampString = "0";
-    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, timestampString);
-    ts = fromString<int>(timestampString);
-    return true;
-}
-
-static bool storeLastMessageTimestamp(const std::string user, const std::string &ts) {
-    boost::mutex::scoped_lock lock(dblock);
-    UserInfo info;
-    if(storagebackend->getUser(user, info) == false) {
-        LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
-        return false;
-    }
-    LOGGER_INFO(logger, "timestamp is " << ts);
-    int type = TYPE_INT;
-    std::string defaultValue = "0";
-    storagebackend->getUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, type, defaultValue);
-    storagebackend->updateUserSetting((long)info.id, LAST_MESSAGE_TIMESTAMP, ts);
-    return true;
 }
 
 class SpectrumNetworkPlugin : public NetworkPlugin {
@@ -444,12 +414,6 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					purple_account_set_password_wrapped(account, token.c_str());
 				}
 			}
-            if (protocol == "prpl-skypeweb") {
-                int ts = 0;
-                if (getLastMessageTimestamp(user, ts)) {
-                    purple_account_set_int_wrapped(account, "last_message_timestamp", ts);
-                }
-            }
 
 			setDefaultAccountOptions(account);
 
@@ -487,17 +451,11 @@ class SpectrumNetworkPlugin : public NetworkPlugin {
 					std::string data = stringOf(purple_account_get_int_wrapped(account, "version", 0));
 					g_file_set_contents ("gfire.cfg", data.c_str(), data.size(), NULL);
 				}
-                if (int ts = purple_account_get_int_wrapped(account, "last_message_timestamp", 0) > 0) {
-                    storeLastMessageTimestamp(user, stringOf(ts));
-                }
 // 				VALGRIND_DO_LEAK_CHECK;
 				m_sessions.erase(user);
 				purple_account_disconnect_wrapped(account);
 				purple_account_set_enabled_wrapped(account, "spectrum", FALSE);
 
-				m_accounts.erase(account);
-
-				purple_accounts_delete_wrapped(account);
 #ifndef WIN32
 #if !defined(__FreeBSD__) && !defined(__APPLE__)
 				malloc_trim(0);
@@ -1511,11 +1469,17 @@ static void connection_report_disconnect(PurpleConnection *gc, PurpleConnectionE
 // 	purple_timeout_add_seconds_wrapped(10, disconnectMe, d);
 }
 
+static void connection_disconnected(PurpleConnection *gc) {
+	PurpleAccount *account = purple_connection_get_account_wrapped(gc);
+	purple_accounts_delete_wrapped(account);
+	np->m_accounts.erase(account);
+}
+
 static PurpleConnectionUiOps conn_ui_ops =
 {
 	NULL,
 	NULL,
-	NULL,//connection_disconnected,
+	connection_disconnected,
 	NULL,
 	NULL,
 	NULL,
@@ -1984,6 +1948,72 @@ static PurpleRoomlistUiOps roomlist_ui_ops =
 	NULL
 };
 
+#if PURPLE_MAJOR_VERSION >=2 && PURPLE_MINOR_VERSION >=11
+
+static void preferencesIntChanged(PurpleAccount *account, const char *name, int value) {
+	boost::mutex::scoped_lock lock(dblock);
+        UserInfo info;
+	std::string user = np->m_accounts[account];
+	LOG4CXX_INFO(logger, "asking for " << user << " settings");
+        if(storagebackend->getUser(user, info) == false) {
+                LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
+                return;
+        }
+        LOG4CXX_INFO(logger, "storing " << value << "as " << name << " for " << user);
+        std::string defaultValue = "0";
+        int type = TYPE_INT;
+        storagebackend->getUserSetting((long)info.id, std::string(name), type, defaultValue);
+        storagebackend->updateUserSetting((long)info.id, std::string(name), stringOf(value));
+};
+
+static void preferencesStringChanged(PurpleAccount *account, const char *name, const char *value) {
+	boost::mutex::scoped_lock lock(dblock);
+        UserInfo info;
+	std::string user = np->m_accounts[account];
+	LOG4CXX_INFO(logger, "asking for " << user << " settings");
+        if(storagebackend->getUser(user, info) == false) {
+                LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
+                return;
+        }
+	LOG4CXX_INFO(logger, "storing " << value << "as " << name << " for " << user);
+	std::string defaultValue = "";
+	int type = TYPE_STRING;
+	storagebackend->getUserSetting((long)info.id, std::string(name), type, defaultValue);
+        storagebackend->updateUserSetting((long)info.id, std::string(name), std::string(value));
+};
+
+static void preferencesBoolChanged(PurpleAccount *account, const char *name, gboolean value) {
+	boost::mutex::scoped_lock lock(dblock);
+        UserInfo info;
+	std::string user = np->m_accounts[account];
+	LOG4CXX_INFO(logger, "asking for " << user << " settings");
+        if(storagebackend->getUser(user, info) == false) {
+                LOG4CXX_ERROR(logger, "Didn't find entry for " << user << " in the database!");
+                return;
+        }
+        LOG4CXX_INFO(logger, "storing " << value << "as " << name << " for " << user);
+        std::string defaultValue = "false";
+        int type = TYPE_BOOLEAN;
+        storagebackend->getUserSetting((long)info.id, std::string(name), type, defaultValue);
+        storagebackend->updateUserSetting((long)info.id, std::string(name), stringOf(value));
+};
+
+static PurpleAccountPrefsUiOps account_prefs_ui_ops =
+{
+	preferencesIntChanged,
+	preferencesStringChanged,
+	preferencesBoolChanged,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+#endif
+
 static void transport_core_ui_init(void)
 {
 	purple_blist_set_ui_ops_wrapped(&blistUiOps);
@@ -1994,7 +2024,9 @@ static void transport_core_ui_init(void)
 	purple_connections_set_ui_ops_wrapped(&conn_ui_ops);
 	purple_conversations_set_ui_ops_wrapped(&conversation_ui_ops);
 	purple_roomlist_set_ui_ops_wrapped(&roomlist_ui_ops);
-
+#if PURPLE_MAJOR_VERSION >=2 && PURPLE_MINOR_VERSION >= 11
+	purple_account_prefs_set_ui_ops_wrapped(&account_prefs_ui_ops);
+#endif
 // #ifndef WIN32
 // 	purple_dnsquery_set_ui_ops_wrapped(getDNSUiOps());
 // #endif
