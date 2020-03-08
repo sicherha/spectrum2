@@ -25,7 +25,6 @@ BuildRequires: libidn-devel
 BuildRequires: expat-devel
 BuildRequires: avahi-devel
 BuildRequires: log4cxx-devel
-BuildRequires: swiften-devel
 BuildRequires: libcommuni-devel
 BuildRequires: libcurl-devel
 BuildRequires: libev-libevent-devel
@@ -33,6 +32,9 @@ BuildRequires: libpqxx-devel
 BuildRequires: libpurple-devel
 BuildRequires: jsoncpp-devel
 Requires:      libtransport%{?_isa} = %{version}-%{release}
+
+# swiften is no longer packaged in Fedora
+%define __requires_exclude libSwiften.so.5
 
 %description
 Spectrum 2 is an XMPP transport/gateway and also simple XMPP server.
