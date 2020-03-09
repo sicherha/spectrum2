@@ -86,7 +86,7 @@ namespace Swift {
 			bool initialized;
 			bool allowSASLEXTERNAL;
 			std::string user_;
-			TLSServerLayer* tlsLayer;
+			SWIFTEN_SHRPTR_NAMESPACE::unique_ptr<TLSServerLayer> tlsLayer;
 			bool tlsConnected;
 	};
 }

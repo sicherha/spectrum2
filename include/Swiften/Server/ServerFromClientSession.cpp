@@ -52,16 +52,12 @@ ServerFromClientSession::ServerFromClientSession(
 			authenticated_(false),
 			initialized(false),
 			allowSASLEXTERNAL(false),
-			tlsLayer(0),
+			tlsLayer(nullptr),
 			tlsConnected(false) {
 				setRemoteJID(remoteJID);
 }
 
-ServerFromClientSession::~ServerFromClientSession() {
-	if (tlsLayer) {
-		delete tlsLayer;
-	}
-}
+ServerFromClientSession::~ServerFromClientSession() = default;
 
 void ServerFromClientSession::handlePasswordValid() {
 	if (!isInitialized()) {
@@ -112,8 +108,8 @@ void ServerFromClientSession::handleElement(SWIFTEN_SHRPTR_NAMESPACE::shared_ptr
 		}
 		else if (dynamic_cast<StartTLSRequest*>(element.get()) != NULL) {
 			getXMPPLayer()->writeElement(SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<TLSProceed>(new TLSProceed));
-			getStreamStack()->addLayer(tlsLayer);
 			tlsLayer->connect();
+			getStreamStack()->addLayer(std::move(tlsLayer));
 			getXMPPLayer()->resetParser();
 		}
 		else if (IQ* iq = dynamic_cast<IQ*>(element.get())) {
@@ -175,7 +171,7 @@ void ServerFromClientSession::handleSessionFinished(const boost::optional<Sessio
 }
 
 void ServerFromClientSession::addTLSEncryption(TLSServerContextFactory* tlsContextFactory, CertificateWithKey::ref cert) {
-	tlsLayer = new TLSServerLayer(tlsContextFactory);
+	tlsLayer.reset(new TLSServerLayer(tlsContextFactory));
 	if (!tlsLayer->setServerCertificate(cert)) {
 // 		std::cout << "error\n";
 		// TODO:

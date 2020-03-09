@@ -20,9 +20,9 @@ namespace Swift {
 		public:
 			DummyConnectionServerFactory(EventLoop* eventLoop);
 
-			virtual SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<ConnectionServer> createConnectionServer(int port);
+			virtual SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<ConnectionServer> createConnectionServer(unsigned short port);
 
-			virtual SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<ConnectionServer> createConnectionServer(const Swift::HostAddress &hostAddress, int port);
+			virtual SWIFTEN_SHRPTR_NAMESPACE::shared_ptr<ConnectionServer> createConnectionServer(const Swift::HostAddress &hostAddress, unsigned short port);
 
 		private:
 			EventLoop* eventLoop;
