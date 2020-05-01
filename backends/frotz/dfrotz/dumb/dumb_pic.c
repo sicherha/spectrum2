@@ -7,8 +7,6 @@
  */
 #include "dumb_frotz.h"
 
-f_setup_t f_setup;
-
 #define PIC_FILE_HEADER_FLAGS 1
 #define PIC_FILE_HEADER_NUM_IMAGES 4
 #define PIC_FILE_HEADER_ENTRY_SIZE 8

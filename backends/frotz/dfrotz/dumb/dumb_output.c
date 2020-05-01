@@ -7,8 +7,6 @@
 
 #include "dumb_frotz.h"
 
-f_setup_t f_setup;
-
 static bool show_line_numbers = FALSE;
 static bool show_line_types = -1;
 static bool show_pictures = TRUE;
