@@ -1,4 +1,4 @@
-FROM fedora:31
+FROM fedora:32
 
 EXPOSE 5222
 VOLUME ["/etc/spectrum2/transports", "/var/lib/spectrum2"]
@@ -17,7 +17,7 @@ RUN echo "---> Installing swiften" && \
 
 # Spectrum 2
 RUN echo "---> Installing Spectrum 2" && \
-		dnf install -y cmake cppunit-devel jsoncpp-devel libcommuni-devel libcurl-devel libev-libevent-devel libpqxx-devel libpurple-devel libsqlite3x-devel log4cxx-devel make mysql-devel popt-devel protobuf-devel qt-devel rpm-build && \
+		dnf install -y cmake cppunit-devel jsoncpp-devel libcommuni-devel libcurl-devel libev-libevent-devel libpqxx-devel libpurple-devel libsqlite3x-devel log4cxx-devel make mysql-devel popt-devel protobuf-devel qt5-qtbase-devel rpm-build && \
 		cd spectrum2 && \
 		./packaging/fedora/build_rpm.sh && \
 		rpm -U /root/rpmbuild/RPMS/x86_64/*.rpm && \
@@ -63,7 +63,7 @@ RUN echo "---> purple-gowhatsapp" && \
 RUN echo "---> cleanup" && \
 		dnf remove -y \
 			avahi-devel boost-devel expat-devel gcc-c++ git libidn-devel libnatpmp-devel libxml2-devel miniupnpc-devel openssl-devel python3-scons \
-			cmake cppunit-devel jsoncpp-devel libcommuni-devel libcurl-devel libev-libevent-devel libpqxx-devel libpurple-devel libsqlite3x-devel log4cxx-devel make mysql-devel popt-devel protobuf-devel qt-devel rpm-build spectrum2-debuginfo \
+			cmake cppunit-devel jsoncpp-devel libcommuni-devel libcurl-devel libev-libevent-devel libpqxx-devel libpurple-devel libsqlite3x-devel log4cxx-devel make mysql-devel popt-devel protobuf-devel qt5-qtbase-devel rpm-build spectrum2-debuginfo \
 			json-glib-devel \
 			python3-devel python3-pip \
 			golang && \

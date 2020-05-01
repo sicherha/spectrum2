@@ -31,6 +31,7 @@ BuildRequires: libev-libevent-devel
 BuildRequires: libpqxx-devel
 BuildRequires: libpurple-devel
 BuildRequires: jsoncpp-devel
+BuildRequires: qt5-qtbase-devel
 Requires:      libtransport%{?_isa} = %{version}-%{release}
 
 # swiften is no longer packaged in Fedora
@@ -43,7 +44,7 @@ Spectrum 2 is an XMPP transport/gateway and also simple XMPP server.
 %setup -q -n spectrum2
 
 %build
-%cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+%cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_QT4=OFF
 make VERBOSE=1 %{?_smp_mflags}
 
 %install
